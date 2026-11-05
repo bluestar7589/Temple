@@ -630,8 +630,8 @@
       <button
         id="cameraToggle"
         class="camera-toggle"
-        aria-label="Đổi góc camera"
-        title="Đổi góc camera"
+        aria-label="Về góc nhìn mặc định"
+        title="Về góc nhìn mặc định"
       >
         ↻
       </button>
@@ -896,10 +896,10 @@
         );
         $('#cameraToggle').setAttribute(
           'aria-label',
-          language === 'en' ? 'Change camera angle' : 'Đổi góc camera'
+          language === 'en' ? 'Reset camera view' : 'Về góc nhìn mặc định'
         );
         $('#cameraToggle').title =
-          language === 'en' ? 'Change camera angle' : 'Đổi góc camera';
+          language === 'en' ? 'Reset camera view' : 'Về góc nhìn mặc định';
         updateCount();
         $('#action').textContent = tr('action');
         $('#mute').textContent = audioOn ? tr('muteOn') : tr('muteOff');
@@ -1582,19 +1582,58 @@
           wishTree.position.z + ribbon.position.z * 2.5
         );
       };
-      const romanceSpot = { x: -10, z: -5 },
-        wealthSpot = { x: 10, z: -5 };
-      box(romanceSpot.x, 1.1, romanceSpot.z, 1.6, 1.8, 0.18, 0xb85d76);
-      createNameTag('Cầu duyên').position.set(
+      // Đặt hai cây thành một hàng phía trước, tách khỏi chuông, ống xin quẻ
+      // và cây nguyện ước để từng khu chức năng có khoảng thở riêng.
+      const romanceSpot = { x: -11, z: 9 },
+        wealthSpot = { x: 11, z: 9 };
+      // Cây biểu tượng thay cho bảng phẳng, nhưng vẫn giữ nguyên điểm tương tác.
+      const createPrayerTree = (x, z, trunkColor, leafColors, label) => {
+        const tree = new THREE.Group();
+        tree.position.set(x, 0, z);
+
+        const trunk = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.35, 0.58, 3.4, 10),
+          mat(trunkColor)
+        );
+        trunk.position.y = 1.7;
+        trunk.castShadow = true;
+        tree.add(trunk);
+
+        for (const [offsetX, offsetY, offsetZ, scale] of [
+          [-0.75, 2.65, 0, 0.95],
+          [0.75, 2.8, 0.1, 0.9],
+          [0, 3.45, 0, 1.15],
+          [-0.35, 3.75, 0.15, 0.82],
+          [0.45, 3.65, -0.1, 0.88],
+        ]) {
+          const canopy = new THREE.Mesh(
+            new THREE.SphereGeometry(0.95, 12, 8),
+            mat(leafColors[Math.floor(Math.random() * leafColors.length)])
+          );
+          canopy.position.set(offsetX, offsetY, offsetZ);
+          canopy.scale.setScalar(scale);
+          canopy.castShadow = true;
+          tree.add(canopy);
+        }
+
+        scene.add(tree);
+        const nameTag = createNameTag(label);
+        nameTag.position.set(x, 5.1, z);
+      };
+
+      createPrayerTree(
         romanceSpot.x,
-        2.25,
-        romanceSpot.z
+        romanceSpot.z,
+        0x704132,
+        [0x9c5360, 0xc66a76, 0xe59a85],
+        'Cây cầu duyên'
       );
-      box(wealthSpot.x, 1.1, wealthSpot.z, 1.6, 1.8, 0.18, 0xc7953d);
-      createNameTag('Cầu tài lộc').position.set(
+      createPrayerTree(
         wealthSpot.x,
-        2.25,
-        wealthSpot.z
+        wealthSpot.z,
+        0x65462f,
+        [0x768b45, 0xa1843d, 0xc29d4c],
+        'Cây tài lộc'
       );
       for (let i = 0; i < 10; i++) {
         const x = -9 + i * 2;
@@ -2293,16 +2332,22 @@
           { passive: false }
         );
       };
-      const changeCamera = () => {
-        viewYaw += Math.PI / 2;
-        toast('Đã đổi góc nhìn');
+      // Đưa camera về góc ban đầu sau khi người chơi xoay hoặc kéo camera.
+      const resetCamera = () => {
+        viewYaw = 0;
+        viewPitch = 0.58;
+        toast(
+          language === 'en'
+            ? 'Camera view reset.'
+            : 'Đã trở về góc nhìn mặc định.'
+        );
       };
-      $('#cameraToggle').addEventListener('click', changeCamera);
+      $('#cameraToggle').addEventListener('click', resetCamera);
       $('#cameraToggle').addEventListener(
         'touchend',
         (e) => {
           e.preventDefault();
-          changeCamera();
+          resetCamera();
         },
         { passive: false }
       );
